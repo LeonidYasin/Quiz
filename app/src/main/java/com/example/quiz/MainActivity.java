@@ -2,6 +2,7 @@ package com.example.quiz;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -12,6 +13,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private Button yesBtn;
     private Button noBtn;
+    private Button showAnswer;
     private TextView questionTextView;
     private Question[] questions = {
             new Question(R.string.question, true),
@@ -20,29 +22,70 @@ public class MainActivity extends AppCompatActivity {
             new Question(R.string.question3, false),
             new Question(R.string.question4, true)
     };
+    private String[] answers = new String[questions.length];
+    private int correctAnswersNumber =0;
+
+
+
+
     private int questionIndex = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d("SYSTEM INFO", "Метод onCreate() запущен");
         setContentView(R.layout.activity_main);
-        if(savedInstanceState!=null)
-        questionIndex=savedInstanceState.getInt("question",0);
+
+        if(savedInstanceState != null){
+            questionIndex = savedInstanceState.getInt("question");
+            correctAnswersNumber = savedInstanceState.getInt("correctAnswersNumber");
+            answers = savedInstanceState.getStringArray("answers");
+        }
+
         questionTextView = findViewById(R.id.questionTextView);
         questionTextView.setText(questions[questionIndex].getQuestion());
         yesBtn = findViewById(R.id.yesBtn);
         noBtn = findViewById(R.id.noBtn);
+        showAnswer = findViewById(R.id.showAnswer);
         yesBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(questions[questionIndex].isAnswer()){
+                Toast.makeText(MainActivity.this, questions[questionIndex].isAnswer()?R.string.correct:R.string.incorrect, Toast.LENGTH_SHORT).show();
+                /*if(questions[questionIndex].isAnswer()){
                     Toast.makeText(MainActivity.this, R.string.correct, Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(MainActivity.this, R.string.incorrect, Toast.LENGTH_SHORT).show();
-                }
+                }*/
 
+                answers[questionIndex]=
+                        getResources().getString(
+                questions[questionIndex].getQuestion()) + " Да"+"\n"  ;
+                System.out.println("ответ номер "+ questionIndex + " записан как: \n"+answers[questionIndex] );
+
+                if(questions[questionIndex].isAnswer()) correctAnswersNumber++;
+
+                /*
+                 * 1) Записываем строку "Вопрос - ваш ответ да/нет" в массив
+                 * 2) Складываем правильные ответы в переменню int
+                 * 3) Проверяем, что вопрос последний
+                 * 4) Если вопрос последний, то создаём интент
+                 * 5) Добавляем дополнение в Интент (массив с вопросамии ответами)
+                 * 6) Добавляем дополнение в Интент (int с числом правильных ответов)
+                 * 7) Запускаем активность
+                 * 8) На запущенной активности вывести строки из массива, тем самым отобразив вопросы и ответы пользователя
+                 *  */
+
+
+                if((questionIndex+1)!=questions.length){
                 questionIndex = (questionIndex + 1)%questions.length;
-                questionTextView.setText(questions[questionIndex].getQuestion());
+                questionTextView.setText(questions[questionIndex].getQuestion());}
+                else{
+                    Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                    intent.putExtra("answers", answers);
+                    intent.putExtra("correctAnswers", correctAnswersNumber);
+                    intent.putExtra("answersNumber", questions.length);
+                    startActivity(intent);
+                    finish();
+                }
             }
         });
         noBtn.setOnClickListener(new View.OnClickListener() {
@@ -54,8 +97,34 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, R.string.incorrect, Toast.LENGTH_SHORT).show();
                 }
 
-                questionIndex = (questionIndex + 1)%questions.length;
-                questionTextView.setText(questions[questionIndex].getQuestion());
+                answers[questionIndex]= answers[questionIndex]=
+                        getResources().getString(
+                                questions[questionIndex].getQuestion())  + " Нет"+"\n"  ;
+                System.out.println("ответ номер "+ questionIndex + " записан как: \n"+answers[questionIndex] );
+
+                if(questions[questionIndex].isAnswer()) correctAnswersNumber++;
+
+                if((questionIndex+1)!=questions.length){
+                    questionIndex = (questionIndex + 1)%questions.length;
+                    questionTextView.setText(questions[questionIndex].getQuestion());}
+                else{
+                    Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                    intent.putExtra("answers", answers);
+                    intent.putExtra("correctAnswers", correctAnswersNumber);
+                    intent.putExtra("answersNumber", questions.length);
+
+                    startActivity(intent);
+                    finish();
+                }
+            }
+        });
+        showAnswer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, AnswerActivity.class);
+                intent.putExtra("answer", questions[questionIndex].isAnswer());
+
+                startActivity(intent);
             }
         });
     }
@@ -77,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         Log.d("SYSTEM INFO", "Метод onSaveInstanceState() запущен");
         savedInstanceState.putInt("question", questionIndex);
+        savedInstanceState.putInt("correctAnswersNumber", correctAnswersNumber);
+        savedInstanceState.putStringArray("answers", answers);
     }
 
     @Override
